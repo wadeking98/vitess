@@ -4,9 +4,7 @@ on:
   pull_request_target:
     types: [opened]
 
-permissions:
-  pull-requests: write
-  contents: read
+permissions: read-all
 
 env:
   GH_TOKEN: ${{ github.token }}
@@ -14,25 +12,19 @@ env:
 jobs:
   build:
     name: Assign Milestone
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          # We must explicitly checkout the base's SHA to avoid executing any code coming from
-          # the PR's SHA - Which would be executed in the base branch's context.
-          # This is really important to limit any sort of pwn requests.
-          ref: ${{ github.base_ref }}
-          persist-credentials: 'false'
+          go-version: 1.20.5
+
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Assign Milestone
         run: |
-          # Ensure the content we sed from version.go is sanitized and match the correct format
-          VERSION=$(sed -n 's/.*versionName.*\"\([[:digit:]\.]*\).*\"/\1/p' ./go/vt/servenv/version.go)
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid version format: $VERSION"
-            exit 1
-          fi
-
-          gh pr edit ${{ github.event.number }} --milestone "v$VERSION"
+          gh pr edit ${{ github.event.number }} --milestone "v$(sed -n 's/.*versionName.*\"\([[:digit:]\.]*\).*\"/\1/p' ./go/vt/servenv/version.go)"
