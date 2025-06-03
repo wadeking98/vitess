@@ -25,6 +25,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Cat
+        run: |
+          cat ./go/vt/servenv/version.go
+
       - name: Assign Milestone
         run: |
           gh pr edit ${{ github.event.number }} --milestone "v$(sed -n 's/.*versionName.*\"\([[:digit:]\.]*\).*\"/\1/p' ./go/vt/servenv/version.go)"
